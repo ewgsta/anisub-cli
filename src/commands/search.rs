@@ -11,12 +11,16 @@ use reqwest::blocking::Client;
 use scraper::{Html, Selector};
 use serde::Deserialize;
 use std::error::Error;
-use std::io::{stdout, Write};
+use std::io::{stdout, Read, Write};
+use std::path::PathBuf;
 
 #[derive(Args)]
 pub struct SearchArgs {
     #[arg(help = "Arama terimi (altyazı başlığı veya anime adı)")]
     pub query: String,
+    
+    #[arg(short = 'o', long = "out", help = "İndirme dizini (Varsayılan: mevcut dizin)")]
+    pub output_dir: Option<PathBuf>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -51,6 +55,20 @@ struct MediaInfo {
 #[derive(Deserialize, Debug)]
 struct InertiaResponse {
     props: InertiaProps,
+}
+
+#[derive(Deserialize, Debug)]
+struct DownloadResponse {
+    success: bool,
+    data: Option<DownloadData>,
+    message: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct DownloadData {
+    download_url: String,
+    filename: String,
+    file_size: u64,
 }
 
 fn fetch_page(
@@ -160,7 +178,7 @@ pub fn execute(config: &Config, args: &SearchArgs) -> Result<(), Box<dyn Error>>
                 };
 
                 let mut line = format!(
-                    "ID:{:<5} | {:<7} | {} - {} (↓ {})",
+                    "ID:{:<5} | {:<7} | {} - {} (↓{})",
                     item.subtitle_id,
                     item.subtitle_language,
                     anime_title,
@@ -192,7 +210,7 @@ pub fn execute(config: &Config, args: &SearchArgs) -> Result<(), Box<dyn Error>>
                 items.append(&mut new_items);
                 total_pages = new_total;
             } else {
-                current_page -= 1; 
+                current_page -= 1;
             }
         }
 
@@ -205,7 +223,6 @@ pub fn execute(config: &Config, args: &SearchArgs) -> Result<(), Box<dyn Error>>
         );
         
         let _ = queue!(stdout, Print(title), cursor::MoveToNextLine(1));
-
 
         for i in 0..list_height {
             let item_idx = scroll + i;
@@ -282,14 +299,68 @@ pub fn execute(config: &Config, args: &SearchArgs) -> Result<(), Box<dyn Error>>
     let _ = disable_raw_mode();
 
     if let Some(item) = result_item {
-        let anime_title = item.media_info.title_english.unwrap_or(
-            item.media_info.title_romaji.unwrap_or_else(|| "Bilinmeyen Anime".to_string())
-        );
+        let download_api_url = if config.token.is_some() {
+            format!("https://anisub.co/api/integrations/subtitles/{}/download", item.subtitle_id)
+        } else {
+            format!("https://anisub.co/api/subtitles/{}/download", item.subtitle_id)
+        };
+
+        let mut req = client.get(&download_api_url);
+        if let Some(token) = &config.token {
+            req = req.header("Authorization", format!("Bearer {}", token));
+        }
+
+        let dl_resp = req.send()?;
         
-        println!("ID: {}", item.subtitle_id);
-        println!("Anime: {}", anime_title);
-        println!("Sürüm: {}", item.subtitle_release_name);
-        println!("Dil: {}", item.subtitle_language);
+        if !dl_resp.status().is_success() {
+            println!("İndirme bilgisi alınamadı (HTTP {})", dl_resp.status());
+            return Ok(());
+        }
+
+        let dl_info: DownloadResponse = dl_resp.json()?;
+        if !dl_info.success {
+            println!("Hata: {}", dl_info.message.unwrap_or_else(|| "Bilinmeyen bir hata oluştu.".to_string()));
+            return Ok(());
+        }
+
+        if let Some(dl_data) = dl_info.data {
+            let dest_dir = args.output_dir.clone().unwrap_or_else(|| std::env::current_dir().unwrap());
+            if !dest_dir.exists() {
+                std::fs::create_dir_all(&dest_dir)?;
+            }
+            
+            let dest_path = dest_dir.join(&dl_data.filename);
+            let mut file = std::fs::File::create(&dest_path)?;
+
+            let mut res = client.get(&dl_data.download_url).send()?;
+            if !res.status().is_success() {
+                println!("Dosya indirilemedi (HTTP {})", res.status());
+                return Ok(());
+            }
+
+            let total_size = res.content_length().unwrap_or(dl_data.file_size);
+            let mut downloaded: u64 = 0;
+            let mut buffer = [0; 8192];
+            let mut stdout_handle = std::io::stdout();
+
+            loop {
+                let n = res.read(&mut buffer)?;
+                if n == 0 { break; }
+                file.write_all(&buffer[..n])?;
+                downloaded += n as u64;
+
+                let percent = if total_size > 0 {
+                    (downloaded as f64 / total_size as f64) * 100.0
+                } else {
+                    0.0
+                };
+
+                print!("\r[{:>3.0}%] {} indiriliyor...", percent, dl_data.filename);
+                stdout_handle.flush()?;
+            }
+            
+            println!("\r[100%] {} başarıyla {} konumuna indirildi.          ", dl_data.filename, dest_dir.display());
+        }
     }
 
     Ok(())
@@ -311,5 +382,3 @@ pub fn execute_api(config: &Config, args: &SearchArgs) -> Result<(), Box<dyn Err
     
     Ok(())
 }
-
-
