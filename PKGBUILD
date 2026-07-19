@@ -9,7 +9,7 @@ license=('GPL-3.0')
 depends=('gcc-libs')
 makedepends=('cargo')
 source=("$pkgname-$pkgver.tar.gz::https://static.crates.io/crates/$pkgname/$pkgname-$pkgver.crate")
-sha256sums=('SKIP')
+sha256sums=('f3e16abeb1e5c9ca360b5bb9a6c98c087782e78cc59a80455c3ebc8734100b4e')
 
 build() {
   cd "$pkgname-$pkgver"
