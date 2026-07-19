@@ -8,6 +8,10 @@ Rust ve cargo kurulu olduğundan emin olunuz.
 ```bash
 cargo install anisub-cli
 ```
+veya aur üzerinden indirin 
+```bash
+yay -S anisub-cli
+```
 
 ## Kullanım
 
