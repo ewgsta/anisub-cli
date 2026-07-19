@@ -6,7 +6,7 @@ authors = ["ewgsta <ewgst@proton.me"]
 description = "Türkçe anime alt yazı platformu anisub.co için cli aracı."
 repository = "https://github.com/ewgsta/anisub-cli"
 license = "GPL-3.0"
-keywords = ["anisub.co", "anisub", "turkce-anime", "anime-altyazi", "cli"]
+keywords = ["anisub", "turkce-anime", "anime-altyazi", "cli"]
 categories = ["command-line-utilities"]
 readme = "README.md"
 
