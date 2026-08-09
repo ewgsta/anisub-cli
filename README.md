@@ -1,40 +1,43 @@
 # Anisub CLI
 
-Türkçe anime alt yazı platformu anisub.co için cli aracı.
+CLI tool for the Turkish anime subtitle platform anisub.co.
 
-## Kurulum
-Rust ve cargo kurulu olduğundan emin olunuz.
-
+## Installation
+Make sure Rust and Cargo are installed.
 ```bash
 cargo install anisub-cli
 ```
-veya aur üzerinden indirin 
+
+or install via AUR:
 ```bash
 yay -S anisub-cli
+
 ```
 
-## Kullanım
+## Usage
 
-### Giriş Yapma (Opsiyonel)
-Kendi tokeniniz ile indirme yapmak için giriş yapabilirsiniz. 
-[Token almak için tıkla.](https://anisub.co/ayarlar#api)
+### Login (Optional)
+
+You can log in to download using your personal token.
+[Click here to get a token.](https://anisub.co/ayarlar#api)
 
 ```bash
 anisub-cli login
 ```
 
-### Arama Yapma ve İndirme
-Anime veya altyazı adıyla arama yapabilirsiniz.
+### Search and Download
 
+You can search by anime or subtitle name.
 ```bash
 anisub-cli search "bleach"
 ```
-veya belirli bir klasöre indirmek için `-o` parametresini kullanın:
+
+or use the `-o` parameter to download to a specific folder:
 ```bash
-anisub-cli search "bleach" -o ~/Indirilenler/Altyazilar
+anisub-cli search "bleach" -o ~/Downloads/Subtitles
 ```
 
-### Kısayollar (Arama Ekranında)
-- **Aşağı/Yukarı Ok:** Sonuçlar arasında gezinme
-- **Enter:** Seçili altyazıyı indir
-- **Q / ESC:** Çıkış yap
+### Shortcuts (In Search Screen)
+* **Up/Down Arrow:** Navigate between results
+* **Enter:** Download selected subtitle
+* **Q / ESC:** Exit
