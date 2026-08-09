@@ -1,6 +1,7 @@
 # Anisub CLI
+> **Read this in other languages:** [Türkçe](README.tr.md)
 
-CLI tool for the Turkish anime subtitle platform anisub.co.
+CLI tool for the Turkish anime subtitles platform anisub.co.
 
 ## Installation
 Make sure Rust and Cargo are installed.
@@ -11,7 +12,6 @@ cargo install anisub-cli
 or install via AUR:
 ```bash
 yay -S anisub-cli
-
 ```
 
 ## Usage
